@@ -8,16 +8,37 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.arthwh.dslist.dto.GameListDTO;
 import com.arthwh.dslist.entities.GameList;
+import com.arthwh.dslist.projection.GameMinProjection;
 import com.arthwh.dslist.repositories.GameListRepository;
+import com.arthwh.dslist.repositories.GameRepository;
 
 @Service
 public class GameListService {
     @Autowired
     private GameListRepository gameListRepository;
 
+    @Autowired
+    private GameRepository gameRepository;
+
     @Transactional(readOnly = true)
     public List<GameListDTO> findAll() {
         List<GameList> result = gameListRepository.findAll();
         return result.stream().map(x -> new GameListDTO(x)).toList();
+    }
+
+    @Transactional
+    public void move(Long listId, int sourceIndex, int destinationIndex) {
+        List<GameMinProjection> list = gameRepository.searchByList(listId);
+
+        GameMinProjection obj = list.remove(sourceIndex);
+        list.add(destinationIndex, obj);
+
+        int min = sourceIndex < destinationIndex ? sourceIndex : destinationIndex;
+        int max = sourceIndex < destinationIndex ? destinationIndex : sourceIndex;
+
+        for (int i = min; i <= max; i++) {
+            System.out.println("Testeeeeeeeeeeeeeeeeeeeeeeeeeeeee: " + list.get(i).getId());
+            gameListRepository.updateBelongingPosition(listId, list.get(i).getId(), i);
+        }
     }
 }
